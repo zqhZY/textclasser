@@ -9,7 +9,7 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-class DataPre():
+class dataset():
 	"""
 		data preparation class,
 		1. text split using jieba
