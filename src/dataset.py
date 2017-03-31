@@ -68,7 +68,7 @@ class textinfo():
 
 		words_list = []
 		assert len(sorted_list) >= n, "main words num n must > all words num in text."
-		for i in range(0, n+1):
+		for i in range(0, n):
 			words_list.append(sorted_list[i][0])
 			
 		return words_list
@@ -163,7 +163,6 @@ class dataset():
 		print "stop words in %s has been removed." % file_path
 		return
 
-	#TODO
 	def gen_dict(self, file_path, save_path="../dict/word_dict.txt"):
 		"""
 			generate key words dict for text using tf_idf algrithm.
@@ -206,7 +205,7 @@ class dataset():
 			os.remove(save_path)
 			
 		for k, text_info in class_dict.items():
-			print "class %s has %d words" % (k, text_info.file_num)
+			#print "class %s has %d words" % (k, text_info.file_num)
 			# get tf in words of class k
 			for w in text_info.wordmap:
 				text_info.tf_idf(w, word_in_files[w], text_num)
@@ -214,14 +213,56 @@ class dataset():
 			main_words = []
 			with open(save_path, "a+") as f:
 				main_words = text_info.get_mainwords()
-				print main_words
-				f.write("\n".join(main_words))
+				print "class %s : main words num: %d" % (k, len(main_words))
+				f.write("\n".join(main_words) + "\n")
 		
 		print "gen word dict in %s." % save_path
 		return
+
+	def gen_wordbag(self, file_path, word_dict="../dict/word_dict.txt"):
+		"""
+			generate wordbag using word_dict.txt.
+			output: {data_type_bag.txt}, lines in the file is
+				<file_unique_id> <words_vector>. each position of
+				words_vector is match the word_dict.txt. the vaklue 
+				of words_vector is number of words appearing in file.
+				
+		"""
+
+		#read word_dict.txt
+		dict_list = []
+		with open(word_dict) as d:
+			for line in d:
+				dict_list.append(line.strip("\n"))
+		
+		# remove tmp file if exists
+		if os.path.exists(file_path+".tmp"):
+			os.remove(file_path+".tmp")
+	
+		#gen vector fomate of data_set, overwrite origin {file_path}
+		with nested(open(file_path), open(file_path+".tmp", "a+")) as (f1, f2):
+			for line in f1:
+				# tmp vector of one text
+				word_vector = []
+				for i in range(0, len(dict_list)):
+					word_vector.append(0)
+				words = line.split()
+				#words[0] is {class_id}_type_id
+				class_id = words[0].split("_")[0]
+				for w in words[1:]:
+					if w in dict_list:
+						word_vector[dict_list.index(w)] += 1
+				
+				f2.write(class_id + " " + " ".join(map(str, word_vector)) + "\n")
+
+		shutil.move(file_path+".tmp", file_path)
+		print "gen word bag over of %s." % file_path
+		return 
+				
 
 if __name__ == '__main__':
 	data_pre = dataset()
 	#data_pre.splitwords("../training_set", "train")
 	#data_pre.rm_stopwords("train.txt", "../dict/stop_words_ch.txt")
-	data_pre.gen_dict("train.txt")
+	#data_pre.gen_dict("train.txt")
+	data_pre.gen_wordbag("train.txt")
