@@ -4,11 +4,74 @@
 import jieba
 import os
 import shutil 
+import math
 from contextlib import nested
 
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
+
+class textinfo():
+	"""
+		file info of certain class, created for tf-idf.
+		max_word_num: max number of words in the class file
+		file_num: the number of files in the class
+		wordmap: key is word, and value is list which size is 2
+		        list[0] save wordcount, and list[1] saves tf-idf
+	"""
+
+	def __init__(self):
+		# save file num of the class
+		self.file_num = 0
+		#word map key is word, and value is list which size is 2
+		#list[0] save wordcount in this class texts, list[1] is tf-idf
+		self.wordmap = {}
+		self.max_word_num = 0
+
+	def update(self, words):
+		"""
+			update class info in this function
+			words: the new word list added
+		"""
+		
+		self.file_num += 1
+
+		flags = {}
+		for w in words:
+			if w not in self.wordmap:
+				self.wordmap[w] = [0, 0]
+			self.wordmap[w][0] += 1
+			if self.wordmap[w][0] > self.max_word_num:
+				self.max_word_num = self.wordmap[w][0]
+		return
+
+	def tf_idf(self,w, number_in_set, text_num):
+		"""
+			compute word`s tf_idf
+		"""
+		
+		tf = 1.0 * self.wordmap[w][0] / self.max_word_num
+		idf = math.log(1.0*text_num/(number_in_set+1)) 
+		#print "tf is %f , idf is %f " %  (tf, idf)
+		self.wordmap[w][1] = tf * idf
+		return
+
+	def get_mainwords(self, n=500):
+		"""
+			get n words from wordmap, which sorted by tf-idf
+			sort wordmap first, return n words list,
+			should called after tf_idf function
+		"""
+		
+		#sort wordmap by tf-idf, sorted list is list of tuple ("key", list)
+		sorted_list = sorted(self.wordmap.items(), key=lambda d:d[1][1], reverse=True)
+
+		words_list = []
+		assert len(sorted_list) >= n, "main words num n must > all words num in text."
+		for i in range(0, n+1):
+			words_list.append(sorted_list[i][0])
+			
+		return words_list
 
 
 class dataset():
@@ -62,6 +125,7 @@ class dataset():
 					f2.write(file_id + " " + " ".join(seg_list).replace("\n", " ")+"\n")
 		
 		print "split word for %s file end." % data_type
+		return
 
 	def rm_stopwords(self, file_path, word_dict):
 		"""
@@ -97,9 +161,10 @@ class dataset():
 		# overwrite origin file with file been removed stop words
 		shutil.move(file_path+".tmp", file_path)
 		print "stop words in %s has been removed." % file_path
+		return
 
 	#TODO
-	def tf_idf(self, file_path, save_path="../dict/word_dict.txt"):
+	def gen_dict(self, file_path, save_path="../dict/word_dict.txt"):
 		"""
 			generate key words dict for text using tf_idf algrithm.
 			file_path: file have been removed stop words, each lines 
@@ -107,27 +172,56 @@ class dataset():
 			output: word_dict.txt, each line in this file is a word
 		"""
 
-		# read words in file_path
-		# if words are already in dict, pass
-		text_dict = []
+		#save textinfo by class id 
+		class_dict = {}
+		# all train text num
+		text_num = 0
+		# save map of word and number of files includes the word
+		word_in_files = {}
 		with open(file_path) as f:
 			for line in f:
-				words = line.split()[1:]
-				for word in words:
-					if word not in text_dict:
-						text_dict.append(word)
-						print len(text_dict)
-			print "distinct word over."
+				text_num += 1
+				words = line.split()
+				#words[0] is {class_id}_type_id
+				class_id = words[0].split("_")[0]
+				if class_id not in class_dict:
+					class_dict[class_id] = textinfo()
+					
+				class_dict[class_id].update(words[1:])
+				
+				# update word_in_files
+				flags = {}
+				for w in words[1:]:
+					if w not in word_in_files:
+						word_in_files[w] = 0
+					if w not in flags:
+						flags[w] = False
+				
+					if flags[w] is False:
+						word_in_files[w] += 1
+						flags[w] = True
+			print "save textinfo according to class id over"
+	
+		if os.path.exists(save_path):
+			os.remove(save_path)
+			
+		for k, text_info in class_dict.items():
+			print "class %s has %d words" % (k, text_info.file_num)
+			# get tf in words of class k
+			for w in text_info.wordmap:
+				text_info.tf_idf(w, word_in_files[w], text_num)
 
-		# write dict to file on disk
-		with open(save_path, "w+") as d:
-			word_dict = "\n".join(text_dict)
-			d.write(word_dict)
+			main_words = []
+			with open(save_path, "a+") as f:
+				main_words = text_info.get_mainwords()
+				print main_words
+				f.write("\n".join(main_words))
 		
 		print "gen word dict in %s." % save_path
+		return
 
 if __name__ == '__main__':
 	data_pre = dataset()
 	#data_pre.splitwords("../training_set", "train")
 	#data_pre.rm_stopwords("train.txt", "../dict/stop_words_ch.txt")
-	#data_pre.gen_dict("train.txt")
+	data_pre.gen_dict("train.txt")
