@@ -74,7 +74,7 @@ class textinfo():
 		return words_list
 
 
-class dataset():
+class data_processor():
 	"""
 		data preparation class,
 		1. text split using jieba
@@ -219,7 +219,7 @@ class dataset():
 		print "gen word dict in %s." % save_path
 		return
 
-	def gen_wordbag(self, file_path, word_dict="../dict/word_dict.txt"):
+	def gen_wordbag(self, file_path, data_type, word_dict="../dict/word_dict.txt"):
 		"""
 			generate wordbag using word_dict.txt.
 			output: {data_type_bag.txt}, lines in the file is
@@ -238,7 +238,10 @@ class dataset():
 		# remove tmp file if exists
 		if os.path.exists(file_path+".tmp"):
 			os.remove(file_path+".tmp")
+		if os.path.exists(data_type+"_labels.txt"):
+			os.remove(data_type+"_labels.txt")
 	
+		class_ids = []
 		#gen vector fomate of data_set, overwrite origin {file_path}
 		with nested(open(file_path), open(file_path+".tmp", "a+")) as (f1, f2):
 			for line in f1:
@@ -249,11 +252,17 @@ class dataset():
 				words = line.split()
 				#words[0] is {class_id}_type_id
 				class_id = words[0].split("_")[0]
+				class_ids.append(class_id)
+
 				for w in words[1:]:
 					if w in dict_list:
 						word_vector[dict_list.index(w)] += 1
 				
-				f2.write(class_id + " " + " ".join(map(str, word_vector)) + "\n")
+				f2.write(" ".join(map(str, word_vector)) + "\n")
+		
+		print len(class_ids)
+		with open(data_type+"_labels.txt", "a+") as l:
+			l.write("\n".join(class_ids))
 
 		shutil.move(file_path+".tmp", file_path)
 		print "gen word bag over of %s." % file_path
@@ -261,8 +270,8 @@ class dataset():
 				
 
 if __name__ == '__main__':
-	data_pre = dataset()
+	data_pre = data_processor()
 	#data_pre.splitwords("../training_set", "train")
 	#data_pre.rm_stopwords("train.txt", "../dict/stop_words_ch.txt")
 	#data_pre.gen_dict("train.txt")
-	data_pre.gen_wordbag("train.txt")
+	data_pre.gen_wordbag("train.txt", "train")
