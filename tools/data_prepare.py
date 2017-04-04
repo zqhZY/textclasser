@@ -113,12 +113,13 @@ class data_processor():
 		
 		list_dirs = os.walk(data_dir)
 		for root, _, files in list_dirs:
+			print root
 			# get all files under data_dir
 			for fp in files:
 				file_path = os.path.join(root, fp)
 				file_id = self.get_unique_id(file_path)
 				#split words for f, save in file ./data_type.txt
-				with nested(open(file_path), open(data_type+".txt", "a+")) as (f1, f):
+				with nested(open(file_path), open(data_type+".txt", "a+")) as (f1, f2):
 					data = f1.read()
 					#print data
 					seg_list = jieba.cut(data, cut_all=False)
@@ -151,12 +152,12 @@ class data_processor():
 		with nested(open(file_path), open(file_path+".tmp", "a+"))  as (f1, f2):
 			for line in f1:
 				tmp_list = [] # save words not in stop dict
-				words = line.split()[1:]
-				for word in words:
+				words = line.split()
+				for word in words[1:]:
 					if word not in stop_dict:
 						tmp_list.append(word)
 				words_without_stop =  " ".join(tmp_list)
-				f2.write(words_without_stop + "\n")
+				f2.write(words[0] + " " + words_without_stop + "\n")
 		
 		# overwrite origin file with file been removed stop words
 		shutil.move(file_path+".tmp", file_path)
@@ -271,7 +272,7 @@ class data_processor():
 
 if __name__ == '__main__':
 	data_pre = data_processor()
-	#data_pre.splitwords("../training_set", "train")
-	#data_pre.rm_stopwords("train.txt", "../dict/stop_words_ch.txt")
+	#data_pre.splitwords("../testing_set", "test")
+	#data_pre.rm_stopwords("test.txt", "../dict/stop_words_ch.txt")
 	#data_pre.gen_dict("train.txt")
-	data_pre.gen_wordbag("train.txt", "train")
+	data_pre.gen_wordbag("test.txt", "test")
