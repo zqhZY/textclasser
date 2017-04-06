@@ -135,8 +135,8 @@ class datasets(object):
 				words = map(int, line.split())
 				text[text_count, :] = words
 				text_count += 1
-				if text_count == 10000:
-					break
+				#if text_count == 10000:
+				#	break
 			
 			labels = numpy.zeros((label_line_num, 1), dtype=numpy.uint8)
 			label_count = 0
@@ -144,8 +144,8 @@ class datasets(object):
 				label = map(int, line.split())
 				labels[label_count, :] = label
 				label_count += 1
-				if label_count == 10000:
-					break
+				#if label_count == 10000:
+				#	break
 
 			labels[labels==10] = 0
 			if one_hot:

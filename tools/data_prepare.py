@@ -270,9 +270,20 @@ class data_processor():
 		return 
 				
 
+
 if __name__ == '__main__':
+	"""
+		rm the annotations below to genderate origin data
+		for training and test, if you already has dic
+		data_pre.gen_dict("train.txt") will not needed
+		all commends should been called one time. 
+		datasets are in ../
+	"""
 	data_pre = data_processor()
 	#data_pre.splitwords("../testing_set", "test")
 	#data_pre.rm_stopwords("test.txt", "../dict/stop_words_ch.txt")
+	#data_pre.splitwords("../training_set", "test")
+	#data_pre.rm_stopwords("train.txt", "../dict/stop_words_ch.txt")
 	#data_pre.gen_dict("train.txt")
-	data_pre.gen_wordbag("test.txt", "test")
+	#data_pre.gen_wordbag("test.txt", "test")
+	#data_pre.gen_wordbag("train.txt", "test")
