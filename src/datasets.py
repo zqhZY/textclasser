@@ -5,6 +5,7 @@ import tensorflow.python.platform
 
 import os
 import sys
+import commands
 import numpy
 import tensorflow as tf
 from contextlib import nested
@@ -70,30 +71,40 @@ class datasets(object):
 		"""
 		pass
 
-	def read_data_sets(self, data_dir, one_hot=False, dtype=tf.float32):
+	def read_train_data(self, data_dir, one_hot=False, dtype=tf.float32):
 		"""
-			read datasets from {train.txt test.txt cv.txt}
+			read datasets from train.txt and train_labels.txt
+			cause all datasets is too large, read data separately
+			to save mem and speed up code.
 			save as numpy array such as train_texts and train_lable
 		"""
 
 		# read training set, text to train.text, label to trian.label
 		train_text, train_label = self.read_from_disk(data_dir, "train", one_hot)
-		test_text, test_label = self.read_from_disk(data_dir, "test", one_hot)
 		
 		validation_size = train_text.shape[0] / 8
 		print "validation size is %d " % validation_size
 		cv_text = train_text[:validation_size]
 		cv_label = train_label[:validation_size]
-		print cv_text.shape
-		print cv_label.shape
 		
 		train_text = train_text[validation_size:]
 		train_label = train_label[validation_size:]
 
 		self.train = dataset(train_text, train_label)
-		self.test = dataset(test_text, test_label)
 		self.cv = dataset(cv_text, cv_label)
 
+		return
+	
+	def read_test_data(self, data_dir, one_hot=False, dtype=tf.float32):
+		"""
+			read datasets from test.txt and test_labels.txt
+			cause all datasets is too large, read data separately
+			to save mem and speed up code.
+			save as numpy array such as test_texts and test_lable
+		"""
+
+		test_text, test_label = self.read_from_disk(data_dir, "test", one_hot)
+		self.test = dataset(test_text, test_label)
 		return
 		
 	def read_from_disk(self, data_dir, data_type, one_hot=False):
@@ -101,44 +112,46 @@ class datasets(object):
 			read certain data from disk, data are been generated using
 			data_prepare.py
 		"""
-		
+		print "read %s data from disk." % data_type	
 		data_path = data_dir + "/" + data_type + ".txt"
 		label_path = data_dir + "/" + data_type + "_labels.txt"
 
 		
 		with nested(open(data_path), open(label_path)) as (f1, f2):
-			tmp_text = []
-			tmp_label = []
-			text_num = 0
+			
+			# get examples num using shell
+			_, stdout = commands.getstatusoutput("cat "+ data_path + " | wc -l")
+			text_line_num = int(stdout)
+			_, stdout = commands.getstatusoutput("cat "+ label_path + " | wc -l")
+			label_line_num = int(stdout)
+			
+			assert label_line_num == text_line_num, "label num and text num must be equal"
+			print "%s examples num is %d" % (data_type, text_line_num)
+			
+			text = numpy.zeros((text_line_num, 5000))
+			text_count = 0
 			for line in f1:
-				text_num += 1
 				# word list form str to int
 				words = map(int, line.split())
-				tmp_text.extend(words)
-				#if text_num == 10000:
-				#	break
+				text[text_count, :] = words
+				text_count += 1
+				if text_count == 10000:
+					break
 			
-			text = numpy.array(tmp_text)
-			text_dim = len(tmp_text)/text_num
-			text = text.reshape((text_num, text_dim))
-			
-			label_num = 0
+			labels = numpy.zeros((label_line_num, 1), dtype=numpy.uint8)
+			label_count = 0
 			for line in f2:
-				label_num += 1
 				label = map(int, line.split())
-				tmp_label.extend(label)
-				#if label_num == 10000:
-				#	break
+				labels[label_count, :] = label
+				label_count += 1
+				if label_count == 10000:
+					break
 
-			label = numpy.array(tmp_label)
-			label[label==10] = 0
+			labels[labels==10] = 0
 			if one_hot:
-				label = self.to_one_hot(label)
+				labels = self.to_one_hot(labels)
 			#print label.shape
-			#label_dim = len(tmp_label) / label_num
-			#label = label.reshape((label_num, label_dim))
-			assert label_num == text_num, "label num and text num must be equal"
-			return text, label
+			return text, labels
 	
 	def to_one_hot(self, labels, class_num=10):
 		"""
@@ -155,5 +168,6 @@ class datasets(object):
 if __name__ == '__main__':
 	d = datasets()
 	d.read_from_disk(".", "train", True)
+	d.read_from_disk(".", "test", True)
 	#d.read_data_sets(".", True)
 	#print d.train.next_batch(1)[1]

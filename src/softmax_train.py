@@ -5,7 +5,7 @@ import tensorflow as tf
 from datasets import datasets
 
 data_sets = datasets()
-data_sets.read_data_sets(".", True)
+data_sets.read_train_data(".", True)
 
 sess = tf.InteractiveSession()
 
@@ -31,10 +31,10 @@ for i in range(1000):
 print W.eval()
 print b.eval()
 # test
-correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-acc = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-print(acc.eval({x: data_sets.test.text, y_: data_sets.test.label}))
+#correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+#acc = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+#print(acc.eval({x: data_sets.test.text, y_: data_sets.test.label}))
 
-path = saver.save(sess, "./model/model.md")
+path = saver.save(sess, "./model2/model.md")
 
 

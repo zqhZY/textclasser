@@ -5,7 +5,7 @@ import tensorflow as tf
 from datasets import datasets
 
 data_sets = datasets()
-data_sets.read_data_sets(".", True)
+data_sets.read_test_data(".", True)
 
 sess = tf.InteractiveSession()
 
@@ -15,18 +15,9 @@ b = tf.Variable(tf.zeros([10]))
 y = tf.nn.softmax(tf.matmul(x, W) + b)
 
 y_ = tf.placeholder(tf.float32, [None, 10])
-cross_entropy = -tf.reduce_sum(y_ * tf.log(y + 1e-10))
-#train_step = tf.train.GradientDescentOptimizer(0.01).minimize(cross_entropy)
-
-#training
-#tf.global_variables_initializer().run()
 
 saver = tf.train.Saver()
-#for i in range(1000):
-#	batch_xs, batch_ys = data_sets.train.next_batch(100)
-#	train_step.run({x: batch_xs, y_: batch_ys})
-	#print cross_entropy
-saver.restore(sess, "./model/model.md")
+saver.restore(sess, "./model2/model.md")
 print W.eval()
 print b.eval()
 
