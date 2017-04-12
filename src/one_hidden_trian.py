@@ -2,7 +2,7 @@
 #-*-coding:utf-8-*-
 
 LAYER_NODE1 = 500 # layer1 node num
-INPUT_NODE = 5000
+INPUT_NODE = 2583
 OUTPUT_NODE = 10
 REG_RATE = 0.01
 
