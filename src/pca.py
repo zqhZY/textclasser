@@ -23,13 +23,10 @@ def pca(origin_mat):
 	"""
 	# mean,normaliza1on
 	avg = numpy.mean(origin_mat, axis=0)
-	print "-------------"
 	# covariance matrix
 	cov = numpy.cov(origin_mat-avg,rowvar=0)
-	print "-------------"
 	#Singular Value Decomposition
 	U, s, V = numpy.linalg.svd(cov, full_matrices=True)
-	print "-------------"
 
 	k = 1;
 	sigma_s = numpy.sum(s)
@@ -53,13 +50,12 @@ if __name__ == '__main__':
 	"""
 	data_sets = datasets()
 	train_text, _ = data_sets.read_from_disk(".", "train", one_hot=False)
-	print train_text.shape
 
 	U, k = pca(train_text)
 	print "U shpae: ", U.shape
-	
+	print "k is : ", k
+
 	text_pca = numpy.dot(train_text, U)
-	print text_pca.shape
 	text_num = text_pca.shape[0]
 	print "text_num in pca is ", text_num
 
